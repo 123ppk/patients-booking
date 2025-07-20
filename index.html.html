@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dental Patient Booking System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+    }
+    .login, .main {
+      display: none;
+      background: #fff;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+    .active { display: block; }
+    h2, h3 {
+      color: #0066cc;
+      margin-bottom: 10px;
+    }
+    input, select, button {
+      padding: 10px;
+      width: 100%;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .card {
+      background: #e6f7ff;
+      border: 1px solid #91d5ff;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      position: relative;
+    }
+    .card h4, .card p {
+      margin: 5px 0;
+    }
+    .icons {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+    }
+    .icons i {
+      margin-left: 10px;
+      cursor: pointer;
+      color: #555;
+    }
+    .icons i:hover {
+      color: red;
+    }
+    .alert {
+      background: #fffbe6;
+      color: #614700;
+      padding: 8px;
+      border-left: 5px solid #faad14;
+      border-radius: 5px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- LOGIN SCREEN -->
+  <div class="login active" id="loginBox">
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email" value="admin@clinic.com"/>
+    <input type="password" id="loginPass" placeholder="Password" value="admin"/>
+    <button onclick="handleLogin()">Login</button>
+    <p><a href="#" onclick="showReset()">Forgot Password?</a></p>
+  </div>
+
+  <!-- RESET SCREEN -->
+  <div class="login" id="resetBox">
+    <h3>Reset Password</h3>
+    <input type="email" placeholder="Email" id="resetEmail" />
+    <input type="text" placeholder="Enter OTP (9999)" id="otpInput" style="display:none" />
+    <input type="password" placeholder="New Password" id="newPass" style="display:none" />
+    <button onclick="sendOTP()">Send OTP</button>
+    <button onclick="resetPassword()" style="display:none" id="resetBtn">Reset Password</button>
+    <p><a href="#" onclick="showLogin()">Back to Login</a></p>
+  </div>
+
+  <!-- MAIN SYSTEM -->
+  <div class="main" id="mainApp">
+    <h2>Dental Patient Booking</h2>
+    <input type="text" id="pname" placeholder="Patient Name" />
+    <input type="text" id="pnumber" placeholder="Mobile Number" />
+    <input type="text" id="problem" placeholder="Problem Description" />
+    <input type="datetime-local" id="time" />
+    <input type="number" id="fees" placeholder="Fees (₹)" />
+    <select id="payment">
+      <option>GPay</option>
+      <option>Barcode</option>
+      <option>Cash</option>
+    </select>
+    <button onclick="addPatient()">Add Patient</button>
+    <div id="cardsContainer"></div>
+  </div>
+
+</div>
+
+<script>
+  let patients = JSON.parse(localStorage.getItem("patients")) || [];
+  const defaultEmail = "admin@clinic.com";
+  let defaultPassword = "admin";
+  const fixedOTP = "9999";
+
+  function showLogin() {
+    document.getElementById("loginBox").classList.add("active");
+    document.getElementById("resetBox").classList.remove("active");
+  }
+
+  function showReset() {
+    document.getElementById("loginBox").classList.remove("active");
+    document.getElementById("resetBox").classList.add("active");
+  }
+
+  function handleLogin() {
+    const email = document.getElementById("loginEmail").value;
+    const pass = document.getElementById("loginPass").value;
+
+    if (email === defaultEmail && pass === defaultPassword) {
+      document.getElementById("loginBox").classList.remove("active");
+      document.getElementById("mainApp").classList.add("active");
+      renderCards();
+    } else {
+      alert("Invalid credentials. Try again.");
+    }
+  }
+
+  function sendOTP() {
+    const email = document.getElementById("resetEmail").value;
+    if (email === defaultEmail) {
+      alert("OTP sent: 9999");
+      document.getElementById("otpInput").style.display = "block";
+      document.getElementById("newPass").style.display = "block";
+      document.getElementById("resetBtn").style.display = "block";
+    } else {
+      alert("Email not found.");
+    }
+  }
+
+  function resetPassword() {
+    const otp = document.getElementById("otpInput").value;
+    const newPass = document.getElementById("newPass").value;
+    if (otp === fixedOTP) {
+      defaultPassword = newPass;
+      alert("Password Reset Successfully!");
+      showLogin();
+    } else {
+      alert("Invalid OTP!");
+    }
+  }
+
+  function addPatient() {
+    const name = document.getElementById("pname").value;
+    const number = document.getElementById("pnumber").value;
+    const prob = document.getElementById("problem").value;
+    const time = document.getElementById("time").value;
+    const fees = document.getElementById("fees").value;
+    const pay = document.getElementById("payment").value;
+
+    const patient = {
+      id: Date.now(),
+      name, number, prob, time, fees, pay
+    };
+    patients.push(patient);
+    localStorage.setItem("patients", JSON.stringify(patients));
+    renderCards();
+    alert("Patient Added!");
+  }
+
+  function renderCards() {
+    const container = document.getElementById("cardsContainer");
+    container.innerHTML = "";
+    patients.forEach((p) => {
+      let alertDiv = "";
+      const diff = new Date(p.time) - new Date();
+      if (diff < 3600000 && diff > 0) {
+        alertDiv = `<div class="alert">⏰ Upcoming: ${new Date(p.time).toLocaleString()}</div>`;
+      }
+      container.innerHTML += `
+        <div class="card">
+          <h4>${p.name} (${p.number})</h4>
+          <p>Problem: ${p.prob}</p>
+          <p>Time: ${new Date(p.time).toLocaleString()}</p>
+          <p>Fees: ₹${p.fees} via ${p.pay}</p>
+          ${alertDiv}
+          <div class="icons">
+            <i class="fas fa-trash" onclick="deletePatient(${p.id})"></i>
+          </div>
+        </div>`;
+    });
+  }
+
+  function deletePatient(id) {
+    patients = patients.filter(p => p.id !== id);
+    localStorage.setItem("patients", JSON.stringify(patients));
+    renderCards();
+  }
+
+  setInterval(() => {
+    if (document.getElementById("mainApp").classList.contains("active")) {
+      renderCards();
+    }
+  }, 10000);
+</script>
+
+</body>
+</html>
