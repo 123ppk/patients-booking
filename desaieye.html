@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Patient Management App</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f7f9fc;
+    margin: 0; padding: 10px;
+    display: flex; justify-content: center;
+  }
+  .container {
+    background: white; width: 100%; max-width: 420px;
+    border-radius: 12px; padding: 20px;
+    box-sizing: border-box;
+  }
+  h2 { margin-bottom: 15px; color: #007bff; text-align: center; }
+  input, select {
+    width: 100%; padding: 10px 12px; margin-bottom: 12px;
+    border: 1.5px solid #ddd; border-radius: 10px; font-size: 15px;
+    box-sizing: border-box;
+  }
+  input:focus, select:focus { border-color: #007bff; outline: none; }
+  button {
+    background-color: #007bff; border: none;
+    color: white; padding: 8px 12px; font-size: 14px;
+    border-radius: 8px; cursor: pointer; margin-bottom: 8px;
+  }
+  button:hover { background-color: #0056b3; }
+  #patients, #doctorList { margin-top: 10px; max-height: 400px; overflow-y: auto; }
+  .card {
+    background: #f2faff; border-left: 5px solid #007bff;
+    padding: 12px; margin-bottom: 12px; border-radius: 10px;
+    font-size: 14px; position: relative;
+  }
+  .delete-btn {
+    position: absolute; top: 6px; right: 6px;
+    background: #ff4d4f; color: white; border: none;
+    font-size: 14px; padding: 2px 6px; border-radius: 50%; cursor: pointer;
+  }
+  #logoutBtn { float: right; background: #ff4d4f; font-size: 12px; padding: 4px 8px; width: auto; margin-bottom: 10px; border-radius: 8px; }
+  .hidden { display: none; }
+  #searchInput { width: 100%; padding: 8px; margin-top: 8px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; }
+  .error-msg { color: red; margin-bottom: 10px; text-align: center; }
+  @media(max-width:480px){ .container{padding:15px;} input,select,button{font-size:13px;padding:8px;} }
+</style>
+</head>
+<body>
+
+<!-- Doctor Login -->
+<div class="container" id="authContainer">
+  <h2>Doctor Login</h2>
+  <div class="error-msg" id="loginError"></div>
+  <input id="doctorEmail" placeholder="Email" type="email" />
+  <input id="doctorPassword" type="password" placeholder="Password" />
+  <button onclick="login()">Login</button>
+  <button onclick="toggleSignup()">Sign Up</button>
+</div>
+
+<!-- Doctor Signup -->
+<div class="container hidden" id="signupContainer">
+  <h2>Doctor Sign Up</h2>
+  <div class="error-msg" id="signupError"></div>
+  <input id="signupEmail" placeholder="Email" type="email" />
+  <input id="signupPassword" type="password" placeholder="Password" />
+  <button onclick="signup()">Create Account</button>
+  <button onclick="toggleLogin()">Back to Login</button>
+</div>
+
+<!-- Doctor Main -->
+<div class="container hidden" id="mainContainer">
+  <button id="logoutBtn" onclick="logout()">Logout</button>
+  <h2>Patients Clinic</h2>
+  <input id="pname" placeholder="Patient Name" />
+  <input id="pnumber" placeholder="Mobile Number" />
+  <input id="problem" placeholder="Problem Description" />
+  <input id="time" type="datetime-local" />
+  <input id="fees" placeholder="Fees (₹)" />
+  <select id="payment">
+    <option value="">Select Payment Method</option>
+    <option>GPay</option>
+    <option>Cash</option>
+    <option>Barcode</option>
+  </select>
+  <button onclick="addPatient()">Add Patient</button>
+  <input id="searchInput" placeholder="Search patient name or mobile" onkeyup="filterPatients()" />
+  <div id="patients"></div>
+</div>
+
+<!-- Admin Panel -->
+<div class="container hidden" id="adminContainer">
+  <button id="logoutBtn" onclick="logoutAdmin()">Logout Admin</button>
+  <h2>Admin Panel</h2>
+  <input id="adminLoginEmail" placeholder="Admin Email" type="email" />
+  <input id="adminLoginPassword" placeholder="Password" type="password" />
+  <button onclick="loginAdmin()">Login as Admin</button>
+  <div id="doctorList"></div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBjHxE9QHCuzS0gbRWeyBrd2pY0sc8dqQA",
+  authDomain: "ecoo-59a2d.firebaseapp.com",
+  databaseURL: "https://ecoo-59a2d-default-rtdb.firebaseio.com",
+  projectId: "ecoo-59a2d",
+  storageBucket: "ecoo-59a2d.appspot.com",
+  messagingSenderId: "571736224094",
+  appId: "1:571736224094:web:b08fca1225dad58e019fcf",
+  measurementId: "G-8C2K6KXR6Z"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+let currentUser=null; let loadedPatients=[];
+
+function toggleSignup(){ document.getElementById('authContainer').classList.add('hidden'); document.getElementById('signupContainer').classList.remove('hidden'); }
+function toggleLogin(){ document.getElementById('signupContainer').classList.add('hidden'); document.getElementById('authContainer').classList.remove('hidden'); }
+
+function signup(){ const email=document.getElementById('signupEmail').value.trim(); const password=document.getElementById('signupPassword').value.trim();
+  if(!email||!password){ alert("Fill all fields."); return; }
+  auth.createUserWithEmailAndPassword(email,password).then(()=>{ alert("Signup successful! Please login."); toggleLogin(); }).catch(err=>alert(err.message)); 
+}
+function login(){ const email=document.getElementById('doctorEmail').value.trim(); const password=document.getElementById('doctorPassword').value.trim();
+  if(!email||!password){ alert("Fill all fields."); return; }
+  auth.signInWithEmailAndPassword(email,password).then(userCredential=>{ currentUser=userCredential.user; showMainScreen(); }).catch(err=>alert(err.message));
+}
+function logout(){ auth.signOut().then(()=>{ currentUser=null; document.getElementById('mainContainer').classList.add('hidden'); document.getElementById('authContainer').classList.remove('hidden'); document.getElementById('searchInput').value=""; document.getElementById('patients').innerHTML=""; }); }
+function showMainScreen(){ document.getElementById('authContainer').classList.add('hidden'); document.getElementById('signupContainer').classList.add('hidden'); document.getElementById('mainContainer').classList.remove('hidden'); loadPatients(); }
+
+function addPatient(){ if(!currentUser)return; const patient={ name:document.getElementById('pname').value.trim(), number:document.getElementById('pnumber').value.trim(), problem:document.getElementById('problem').value.trim(), time:document.getElementById('time').value, fees:document.getElementById('fees').value.trim(), payment:document.getElementById('payment').value, timestamp:Date.now() }; if(!patient.name||!patient.number||!patient.payment){ alert("Fill required fields."); return; } db.ref(`patients/${currentUser.uid}`).push(patient).then(()=>{ alert("Patient added!"); clearPatientInputs(); loadPatients(); }).catch(err=>alert(err.message)); }
+function clearPatientInputs(){ ['pname','pnumber','problem','time','fees','payment'].forEach(id=>document.getElementById(id).value=""); }
+
+function loadPatients(){ if(!currentUser)return; db.ref(`patients/${currentUser.uid}`).once('value').then(snapshot=>{ const data=snapshot.val(); const container=document.getElementById('patients'); container.innerHTML=""; loadedPatients=[]; if(!data){ container.innerHTML="<p style='text-align:center;color:#666;'>No patients found.</p>"; return; } Object.entries(data).sort((a,b)=>b[1].timestamp - a[1].timestamp).forEach(([key,p])=>{ loadedPatients.push({...p,key}); }); displayPatients(loadedPatients); }); }
+
+function displayPatients(patients){ const container=document.getElementById('patients'); container.innerHTML=""; if(patients.length===0){ container.innerHTML="<p style='text-align:center;color:#666;'>No matching patients found.</p>"; return; } patients.forEach(p=>{ container.innerHTML+=`<div class="card"><button class="delete-btn" onclick="deletePatient('${p.key}')">&times;</button><b>Name:</b> ${p.name}<br><b>Mobile:</b> ${p.number}<br><b>Problem:</b> ${p.problem}<br><b>Appointment:</b> ${p.time?new Date(p.time).toLocaleString():"Not set"}<br><b>Fees:</b> ₹${p.fees||"-"}<br><b>Payment:</b> ${p.payment}</div>`; }); }
+
+function deletePatient(key){ if(!currentUser)return; if(!confirm("Delete this patient?"))return; db.ref(`patients/${currentUser.uid}/${key}`).remove().then(()=>loadPatients()); }
+function filterPatients(){ const query=document.getElementById('searchInput').value.toLowerCase(); displayPatients(loadedPatients.filter(p=>p.name.toLowerCase().includes(query)||p.number.toLowerCase().includes(query))); }
+
+// ---------------- Admin ----------------
+function loginAdmin(){ const email=document.getElementById('adminLoginEmail').value.trim(); const pass=document.getElementById('adminLoginPassword').value.trim(); if(email==='admin@clinic.com'&&pass==='admin123'){ showAdminPanel(); } else { alert("Invalid Admin credentials"); } }
+function showAdminPanel(){ document.getElementById('authContainer').classList.add('hidden'); document.getElementById('signupContainer').classList.add('hidden'); document.getElementById('mainContainer').classList.add('hidden'); document.getElementById('adminContainer').classList.remove('hidden'); loadAllDoctors(); }
+function logoutAdmin(){ document.getElementById('adminContainer').classList.add('hidden'); document.getElementById('authContainer').classList.remove('hidden'); }
+
+function loadAllDoctors(){ const container=document.getElementById('doctorList'); container.innerHTML=""; db.ref('patients').once('value').then(snapshot=>{ const data=snapshot.val(); if(!data){ container.innerHTML="<p>No doctor data.</p>"; return; } Object.entries(data).forEach(([uid,patients])=>{ const doctorCard=document.createElement('div'); doctorCard.className="card"; doctorCard.innerHTML=`<b>Doctor UID:</b> ${uid}<br><b>Patients:</b> ${Object.keys(patients).length}<br>`; const deleteBtn=document.createElement('button'); deleteBtn.className="delete-btn"; deleteBtn.textContent="×"; deleteBtn.onclick=()=>{ if(confirm("Delete this doctor and all patients?")){ db.ref('patients/'+uid).remove().then(()=>loadAllDoctors()); } }; doctorCard.appendChild(deleteBtn); container.appendChild(doctorCard); Object.entries(patients).forEach(([pkey,p])=>{ if(Date.now()-p.timestamp>31536000000){ db.ref(`patients/${uid}/${pkey}`).remove(); } }); }); }); }
+</script>
+</body>
+</html>
