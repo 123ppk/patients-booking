@@ -1,400 +1,241 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Clinic Appointment System — Single File</title>
-  <style>
-    :root{--bg:#f3f6fb;--card:#fff;--accent:#2563eb;--muted:#6b7280;--danger:#ef4444}
-    *{box-sizing:border-box}
-    body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:var(--bg);color:#0b1220}
-    .wrap{max-width:980px;margin:28px auto;padding:18px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-    h1{font-size:20px;margin:0}
-    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 20px rgba(16,24,40,0.04)}
-    .row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
-    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input,select,textarea{padding:8px;border:1px solid #e6e9ee;border-radius:8px;width:100%}
-    .col{flex:1;min-width:180px}
-    button{padding:8px 10px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
-    button.ghost{background:transparent;color:var(--accent);border:1px solid #dbeafe}
-    .small{padding:6px 8px;font-size:13px}
-    .muted{color:var(--muted);font-size:13px}
-    .grid{display:grid;grid-template-columns:1fr 340px;gap:12px}
-    ul.list{list-style:none;padding:0;margin:0;max-height:520px;overflow:auto}
-    li.item{display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid #f1f5f9}
-    .meta{font-size:13px;color:#111}
-    .tiny{font-size:12px;color:var(--muted)}
-    .actions{display:flex;gap:6px}
-    pre{white-space:pre-wrap;word-break:break-word;background:#111;padding:10px;color:#fff;border-radius:8px}
-    .search{display:flex;gap:8px}
-    .note-box{margin-top:6px;padding:8px;border-radius:8px;background:#f8fafc;border:1px solid #eef2f7;font-size:13px}
-    @media (max-width:880px){.grid{grid-template-columns:1fr;}.wrap{padding:12px}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinic Appointment System</title>
+<style>
+body{font-family:'Segoe UI',sans-serif;margin:0;padding:0;background:#fff;color:#000;min-height:100vh;display:flex;flex-direction:column;}
+header{padding:10px 20px;text-align:center;font-size:20px;font-weight:600;position:relative;background:#f1f5ff;}
+header button.logout{position:absolute;right:8px;top:8px;border:1px solid #dc2626;color:#dc2626;background:#fff;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer;display:none;width:auto;}
+.container{flex:1;padding:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+form{padding:15px;background:#fff;border-radius:10px;border:1px solid #ddd;margin-bottom:10px;width:100%;max-width:350px;box-sizing:border-box;}
+input,select,button{padding:6px;margin:5px 0;width:100%;border-radius:6px;border:1px solid #ddd;box-sizing:border-box;font-size:13px;}
+input:focus,select:focus{border-color:#2563eb;outline:none;}
+button{cursor:pointer;}
+button.outline{border:1px solid #2563eb;background:#fff;color:#2563eb;font-weight:500;}
+button.outline:hover{background:#2563eb;color:#fff;}
+.admin-dashboard{display:flex;width:100%;gap:15px;align-items:flex-start;flex-wrap:wrap;}
+.forms{flex:1;min-width:280px;max-width:320px;display:flex;flex-direction:column;max-height:600px;overflow-y:auto;}
+.cards-container{flex:2;display:flex;flex-direction:column;align-items:center;max-height:600px;overflow-y:auto;width:100%;}
+.cards{display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-start;}
+.card{background:#fff;padding:10px;border-radius:10px;border:1px solid #ddd;min-width:220px;max-width:260px;text-align:left;font-size:13px;flex:1;}
+.card h3{margin:5px 0;font-size:15px;color:#000;}
+.card p{margin:3px 0;font-size:13px;color:#000;}
+.card button{padding:4px 8px;font-size:12px;margin:3px;}
+#searchBox{width:90%;max-width:400px;padding:6px;border-radius:6px;border:1px solid #ccc;margin:5px auto 10px auto;font-size:13px;display:block;}
+#authPage,#adminPage,#doctorPage,#patientPage{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+@media(max-width:800px){.admin-dashboard{flex-direction:column;align-items:center;}.cards-container{align-items:center;}.cards{justify-content:center;}}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Clinic Appointment System</h1>
-      <div id="navArea"></div>
-    </header>
+<header>
+Clinic Appointment System
+<button class="logout" onclick="logout()" id="logoutBtn">Logout</button>
+</header>
 
-    <div id="main" class="card">
-      <!-- content injected by JS -->
-    </div>
+<div class="container">
+<!-- Login Only -->
+<div id="authPage">
+<form id="loginForm">
+<h2>Login</h2>
+<input type="email" id="loginEmail" placeholder="Email" required>
+<input type="password" id="loginPassword" placeholder="Password" required>
+<select id="loginRole">
+<option value="admin">Admin</option>
+<option value="doctor">Doctor</option>
+<option value="patient">Patient</option>
+</select>
+<button type="submit" class="outline">Login</button>
+</form>
+</div>
 
-    <footer style="margin-top:12px" class="muted">Seeded users: admin1/123 (admin), clinic1/123 (clinic-admin), drdesai/123 (doctor), patient1/123 (patient)</footer>
-  </div>
+<!-- Admin Dashboard -->
+<div id="adminPage" style="display:none;width:100%;">
+<div class="admin-dashboard">
+<div class="forms">
+<form id="clinicForm">
+<h3>Add Clinic</h3>
+<input type="text" id="clinicName" placeholder="Clinic Name" required>
+<input type="text" id="clinicAddress" placeholder="Clinic Address" required>
+<input type="text" id="clinicPhone" placeholder="Phone No" required>
+<button type="submit" class="outline">Add Clinic</button>
+</form>
+<form id="doctorForm">
+<h3>Add Doctor</h3>
+<input type="text" id="doctorName" placeholder="Doctor Name" required>
+<input type="email" id="doctorEmail" placeholder="Doctor Email" required>
+<input type="password" id="doctorPassword" placeholder="Doctor Password" required>
+<select id="doctorClinic"></select>
+<button type="submit" class="outline">Add Doctor</button>
+</form>
+<form id="patientForm">
+<h3>Add Patient</h3>
+<input type="text" id="patientName" placeholder="Patient Name" required>
+<input type="email" id="patientEmail" placeholder="Patient Email" required>
+<input type="password" id="patientPassword" placeholder="Patient Password" required>
+<input type="text" id="patientPhone" placeholder="Phone No" required>
+<input type="number" id="patientAge" placeholder="Age" required>
+<input type="text" id="patientProblem" placeholder="Problem" required>
+<input type="date" id="patientDate" required>
+<input type="time" id="patientTime" required>
+<select id="patientDay" required>
+  <option value="">Select Day</option>
+  <option>Monday</option>
+  <option>Tuesday</option>
+  <option>Wednesday</option>
+  <option>Thursday</option>
+  <option>Friday</option>
+  <option>Saturday</option>
+  <option>Sunday</option>
+</select>
+<input type="text" id="patientAddress" placeholder="Address" required>
+<select id="patientDoctor"></select>
+<button type="submit" class="outline">Add Patient</button>
+</form>
+</div>
+<div class="cards-container">
+<input type="text" id="searchBox" placeholder="Search patients...">
+<div class="cards" id="patientsContainer"></div>
+</div>
+</div>
+</div>
 
-  <script>
-  // Single-file clinic appointment app using localStorage
-  (function(){
-    // Utilities
-    const $ = (s, root=document) => root.querySelector(s);
-    const $$ = (s, root=document) => Array.from(root.querySelectorAll(s));
+<!-- Doctor Dashboard -->
+<div id="doctorPage" style="display:none;">
+<h2>Doctor Dashboard</h2>
+<div class="cards" id="doctorPatients"></div>
+</div>
 
-    // localStorage keys
-    const LS_USERS = 'clinic_users_v1';
-    const LS_CLINICS = 'clinic_clinics_v1';
-    const LS_DOCTORS = 'clinic_doctors_v1';
-    const LS_APPTS = 'clinic_appts_v1';
+<!-- Patient Dashboard -->
+<div id="patientPage" style="display:none;">
+<h2>Patient Dashboard</h2>
+<div class="cards" id="myCard"></div>
+</div>
+</div>
 
-    // default data seed
-    function seedIfEmpty(){
-      if(!localStorage.getItem(LS_USERS)){
-        const users = [
-          {username:'admin1', password:'123', role:'admin'},
-          {username:'clinic1', password:'123', role:'clinic-admin', clinicId:'clinic-1'},
-          {username:'drdesai', password:'123', role:'doctor', clinicId:'clinic-1', doctorId:'dr-1'},
-          {username:'patient1', password:'123', role:'patient'}
-        ];
-        localStorage.setItem(LS_USERS, JSON.stringify(users));
-      }
-      if(!localStorage.getItem(LS_CLINICS)){
-        const clinics = [{id:'clinic-1', name:'Sunrise Clinic', address:'Main St'}];
-        localStorage.setItem(LS_CLINICS, JSON.stringify(clinics));
-      }
-      if(!localStorage.getItem(LS_DOCTORS)){
-        const doctors = [{id:'dr-1', name:'Dr. Desai', clinicId:'clinic-1'}];
-        localStorage.setItem(LS_DOCTORS, JSON.stringify(doctors));
-      }
-      if(!localStorage.getItem(LS_APPTS)){
-        localStorage.setItem(LS_APPTS, JSON.stringify([]));
-      }
-    }
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js"></script>
 
-    seedIfEmpty();
+<script>
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAIje3aPJK5BeZ9u0M-PY3rrZHPBZCsp7I",
+  authDomain: "patient-app-9d81f.firebaseapp.com",
+  databaseURL: "https://patient-app-9d81f-default-rtdb.firebaseio.com",
+  projectId: "patient-app-9d81f",
+  storageBucket: "patient-app-9d81f.firebasestorage.app",
+  messagingSenderId: "86486627512",
+  appId: "1:86486627512:web:595270284159741947f04d",
+  measurementId: "G-4ER8TMMJEV"
+};
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    // load/save
-    const load = key => JSON.parse(localStorage.getItem(key) || 'null');
-    const save = (key, val) => localStorage.setItem(key, JSON.stringify(val));
+let users=JSON.parse(localStorage.getItem("users")||"[]");
+let clinics=JSON.parse(localStorage.getItem("clinics")||"[]");
+let currentUser=JSON.parse(localStorage.getItem("currentUser")||"null");
 
-    // auth state
-    let currentUser = null;
+// Default admin
+if(!users.some(u=>u.role==="admin")){
+  users.push({id:1,name:"Admin",email:"admin@wec.com",password:"admin123",role:"admin"});
+  localStorage.setItem("users",JSON.stringify(users));
+}
 
-    // helpers
-    function uid(prefix='id'){return prefix+'-'+Math.random().toString(36).slice(2,9)}
+function save(){
+  localStorage.setItem("users",JSON.stringify(users));
+  localStorage.setItem("clinics",JSON.stringify(clinics));
+  localStorage.setItem("currentUser",JSON.stringify(currentUser));
+  db.ref("users").set(users);
+  db.ref("clinics").set(clinics);
+  db.ref("currentUser").set(currentUser);
+}
+db.ref("users").on("value",snap=>{if(snap.val()) users=snap.val();});
+db.ref("clinics").on("value",snap=>{if(snap.val()) clinics=snap.val();});
+db.ref("currentUser").on("value",snap=>{currentUser=snap.val();showPage();});
 
-    // render nav
-    function renderNav(){
-      const nav = $('#navArea');
-      nav.innerHTML = '';
-      if(!currentUser){
-        const btn = document.createElement('button'); btn.textContent='Login / Register'; btn.className='small';
-        btn.onclick = () => showLogin();
-        nav.appendChild(btn);
-      } else {
-        const who = document.createElement('span'); who.className='muted'; who.textContent = `${currentUser.username} (${currentUser.role}) `;
-        nav.appendChild(who);
-        const btn = document.createElement('button'); btn.textContent='Logout'; btn.className='small ghost';
-        btn.onclick = () => { currentUser = null; render(); };
-        nav.appendChild(btn);
-      }
-    }
+// login
+loginForm.addEventListener("submit",e=>{
+  e.preventDefault();
+  let u=users.find(x=>x.email===loginEmail.value && x.password===loginPassword.value && x.role===loginRole.value);
+  if(!u)return alert("Invalid credentials");
+  currentUser=u;save();showPage();
+});
 
-    // render main
-    function render(){
-      renderNav();
-      const main = $('#main');
-      main.innerHTML = '';
-      if(!currentUser) return showLogin();
-      // main app layout
-      const container = document.createElement('div'); container.className='grid';
-      const left = document.createElement('div');
-      const right = document.createElement('div'); right.style.paddingLeft='8px';
+function logout(){currentUser=null;save();location.reload();}
+function showPage(){
+  document.getElementById("authPage").style.display=currentUser? "none":"flex";
+  document.getElementById("adminPage").style.display=(currentUser&&currentUser.role==="admin")? "flex":"none";
+  document.getElementById("doctorPage").style.display=(currentUser&&currentUser.role==="doctor")? "flex":"none";
+  document.getElementById("patientPage").style.display=(currentUser&&currentUser.role==="patient")? "flex":"none";
+  document.getElementById("logoutBtn").style.display=currentUser? "inline-block":"none";
+  fillDoctorOptions();fillClinicOptions();renderPatients();renderDoctorPatients();renderMyCard();
+}
 
-      // Show Create Appointment form ONLY to non-doctor & non-patient roles
-      if(currentUser.role !== 'doctor' && currentUser.role !== 'patient'){
-        left.innerHTML += `
-          <div class="card">
-            <h3>Create Appointment</h3>
-            <div class="row">
-              <div class="col"><label>Clinic</label><select id="clinicSel"></select></div>
-              <div class="col"><label>Doctor</label><select id="doctorSel"></select></div>
-            </div>
-            <div class="row">
-              <div class="col"><label>Patient name</label><input id="patientName" placeholder="Patient"/></div>
-              <div class="col"><label>Date</label><input id="apDate" type="date"/></div>
-              <div class="col"><label>Time</label><input id="apTime" type="time"/></div>
-            </div>
-            <div class="row"><div class="col"><label>Notes</label><textarea id="notes" rows="2"></textarea></div></div>
-            <div class="row"><button id="addAppt">Add Appointment</button><button id="clearForm" class="ghost small">Clear</button></div>
-          </div>
+// add clinic
+clinicForm.addEventListener("submit",e=>{
+  e.preventDefault();
+  clinics.push({id:Date.now(),name:clinicName.value,address:clinicAddress.value,phone:clinicPhone.value});
+  save();alert("Clinic Added");clinicForm.reset();fillClinicOptions();
+});
+function fillClinicOptions(){doctorClinic.innerHTML=clinics.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");}
 
-          <div style="height:10px"></div>
-        `;
-      }
+// add doctor
+doctorForm.addEventListener("submit",e=>{
+  e.preventDefault();
+  let doc={id:Date.now(),name:doctorName.value,email:doctorEmail.value,password:doctorPassword.value,role:"doctor",clinicId:doctorClinic.value};
+  users.push(doc);save();alert("Doctor Added");doctorForm.reset();fillDoctorOptions();
+});
 
-      // Show Appointments list ONLY to Doctor and Patient roles
-      if(currentUser.role === 'doctor' || currentUser.role === 'patient'){
-        left.innerHTML += `
-          <div class="card">
-            <h3>Appointments <span class="tiny muted" id="apCount"></span></h3>
-            <div class="row search"><input id="searchBox" placeholder="Search by patient, doctor, clinic, date"/><button id="searchBtn" class="ghost small">Search</button><button id="resetBtn" class="ghost small">Reset</button></div>
-            <ul class="list" id="apptList"></ul>
-          </div>
-        `;
-      } else {
-        // For non-doctor/patient roles show the appointments list too (optional). Keeping original behavior: show list for admin as well
-        left.innerHTML += `
-          <div class="card">
-            <h3>Appointments <span class="tiny muted" id="apCount"></span></h3>
-            <div class="row search"><input id="searchBox" placeholder="Search by patient, doctor, clinic, date"/><button id="searchBtn" class="ghost small">Search</button><button id="resetBtn" class="ghost small">Reset</button></div>
-            <ul class="list" id="apptList"></ul>
-          </div>
-        `;
-      }
+// add patient
+patientForm.addEventListener("submit",e=>{
+  e.preventDefault();
+  let pat={id:Date.now(),name:patientName.value,email:patientEmail.value,password:patientPassword.value,role:"patient",phone:patientPhone.value,age:patientAge.value,problem:patientProblem.value,date:patientDate.value,time:patientTime.value,day:patientDay.value,address:patientAddress.value,doctorId:patientDoctor.value};
+  users.push(pat);save();patientForm.reset();renderPatients();renderDoctorPatients();
+});
+function fillDoctorOptions(){let docs=users.filter(u=>u.role==="doctor");patientDoctor.innerHTML=docs.map(d=>`<option value="${d.id}">${d.name}</option>`).join("");}
 
-      // Right: management + actions (same for all roles)
-      right.innerHTML = `
-        <div class="card">
-          <h3>Manage</h3>
-          <div class="row">
-            <button id="manageClinics" class="small ghost">Clinics</button>
-            <button id="manageDoctors" class="small ghost">Doctors</button>
-            <button id="showSummary" class="small ghost">Summary</button>
-          </div>
-          <hr/>
-          <div class="row">
-            <button id="exportJSON" class="small">Export JSON</button>
-            <input id="importFile" type="file" accept="application/json" style="display:none"/>
-            <button id="importBtn" class="small ghost">Import JSON</button>
-          </div>
-          <div class="row">
-            <button id="showAll" class="small ghost">Show All</button>
-            <button id="purgeOld" class="small ghost">Purge old</button>
-          </div>
-        </div>
+// render patients (admin)
+function renderPatients(){
+  patientsContainer.innerHTML="";
+  let pats=users.filter(u=>u.role==="patient");
+  pats.forEach(p=>{
+    let card=document.createElement("div");card.className="card";
+    card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email}</p><p><b>Phone:</b> ${p.phone}</p><p><b>Age:</b> ${p.age}</p><p><b>Problem:</b> ${p.problem}</p><p><b>Date:</b> ${p.date} ${p.time} (${p.day})</p><p><b>Address:</b> ${p.address}</p>
+    <div><button class="outline" onclick="alert('SMS to ${p.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button><button class="outline" onclick="deleteUser(${p.id})">Delete</button></div>`;
+    patientsContainer.appendChild(card);
+  });
+}
 
-        <div style="height:10px"></div>
+// doctor dashboard
+function renderDoctorPatients(){
+  doctorPatients.innerHTML="";
+  if(currentUser && currentUser.role==="doctor"){
+    let pats=users.filter(p=>p.role==="patient" && p.doctorId==currentUser.id);
+    pats.forEach(p=>{
+      let card=document.createElement("div");card.className="card";
+      card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email}</p><p><b>Phone:</b> ${p.phone}</p><p><b>Age:</b> ${p.age}</p><p><b>Problem:</b> ${p.problem}</p><p><b>Date:</b> ${p.date} ${p.time} (${p.day})</p><p><b>Address:</b> ${p.address}</p>
+      <div><button class="outline" onclick="alert('SMS to ${p.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button></div>`;
+      doctorPatients.appendChild(card);
+    });
+  }
+}
 
-        <div class="card" id="managePanel"></div>
-      `;
+// patient dashboard
+function renderMyCard(){
+  myCard.innerHTML="";
+  if(currentUser&&currentUser.role==="patient"){
+    let card=document.createElement("div");card.className="card";
+    card.innerHTML=`<h3>${currentUser.name}</h3><p><b>Email:</b> ${currentUser.email}</p><p><b>Phone:</b> ${currentUser.phone}</p><p><b>Age:</b> ${currentUser.age}</p><p><b>Problem:</b> ${currentUser.problem}</p><p><b>Date:</b> ${currentUser.date} ${currentUser.time} (${currentUser.day})</p><p><b>Address:</b> ${currentUser.address}</p>
+    <div><button class="outline" onclick="alert('SMS to ${currentUser.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${currentUser.phone}','_blank')">WhatsApp</button></div>`;
+    myCard.appendChild(card);
+  }
+}
 
-      container.appendChild(left); container.appendChild(right);
-      main.appendChild(container);
-
-      // populate clinic/doctor selects (if present)
-      const clinics = load(LS_CLINICS) || [];
-      const doctors = load(LS_DOCTORS) || [];
-
-      if($('#clinicSel')){
-        const clinicSel = $('#clinicSel'); clinicSel.innerHTML = '';
-        clinics.forEach(c => { const opt=document.createElement('option'); opt.value=c.id; opt.textContent=c.name; clinicSel.appendChild(opt); });
-
-        function refreshDoctorsForClinic(){
-          const clinicId = clinicSel.value;
-          const docSel = $('#doctorSel'); docSel.innerHTML='';
-          const list = doctors.filter(d=>d.clinicId===clinicId || !clinicId);
-          list.forEach(d=>{ const opt=document.createElement('option'); opt.value=d.id; opt.textContent=d.name; docSel.appendChild(opt); });
-        }
-        if(clinicSel.options.length===0){ const o=document.createElement('option'); o.value=''; o.textContent='-- No clinics --'; clinicSel.appendChild(o); }
-        refreshDoctorsForClinic();
-        clinicSel.onchange = refreshDoctorsForClinic;
-
-        // add appt (only available when create form exists)
-        $('#addAppt').onclick = ()=>{
-          const appts = load(LS_APPTS) || [];
-          const clinicId = $('#clinicSel').value; const doctorId = $('#doctorSel').value;
-          const patientName = $('#patientName').value.trim(); const date = $('#apDate').value; const time = $('#apTime').value; const notes = $('#notes').value.trim();
-          if(!clinicId || !doctorId || !patientName || !date || !time){ alert('Please fill clinic, doctor, patient, date and time'); return; }
-          const ap = {id:uid('ap'), clinicId, doctorId, patientName, date, time, notes, createdAt: new Date().toISOString() };
-          appts.push(ap); save(LS_APPTS, appts); $('#patientName').value=''; $('#notes').value=''; renderAppts();
-        };
-        $('#clearForm').onclick = ()=>{ $('#patientName').value=''; $('#apDate').value=''; $('#apTime').value=''; $('#notes').value=''; };
-      }
-
-      // create list
-      function renderAppts(listOverride){
-        const all = listOverride || (load(LS_APPTS) || []);
-        // If current user is doctor, filter to appointments for that doctor
-        let list = all;
-        if(currentUser.role === 'doctor'){
-          // find doctor id if stored in user
-          const myDocId = currentUser.doctorId || null;
-          if(myDocId){
-            list = all.filter(a => a.doctorId === myDocId);
-          } else {
-            // fallback: if doctors list has a doctor with username matching, try to match by name
-            // (no-op if can't find)
-          }
-        }
-        // If current user is patient, filter to appointments where patientName matches username (simple match)
-        if(currentUser.role === 'patient'){
-          list = list.filter(a => a.patientName && a.patientName.toLowerCase().includes(currentUser.username.toLowerCase()));
-        }
-
-        const apList = $('#apptList'); if(!apList) return; apList.innerHTML='';
-        $('#apCount').textContent = `(${list.length})`;
-        const clinics = load(LS_CLINICS)||[]; const docs = load(LS_DOCTORS)||[];
-
-        list.forEach(a=>{
-          const clinic = clinics.find(c=>c.id===a.clinicId); const doc = docs.find(d=>d.id===a.doctorId);
-          const li = document.createElement('li'); li.className='item';
-          // main meta block
-          const leftBlock = document.createElement('div');
-          leftBlock.innerHTML = `<div class="meta">${a.patientName} <span class="tiny"> — ${doc?doc.name:'–'} @ ${clinic?clinic.name:'–'}</span></div><div class="tiny">${a.date} ${a.time}</div>`;
-
-          // notes (visible to both doctor and patient)
-          const noteEl = document.createElement('div');
-          noteEl.className = 'note-box';
-          noteEl.textContent = a.notes ? a.notes : '(No notes)';
-          leftBlock.appendChild(noteEl);
-
-          const act = document.createElement('div'); act.className='actions';
-          // keep edit/delete for admins (or keep as originally) — we'll show edit/delete only to non-doctor/non-patient
-          if(currentUser.role !== 'doctor' && currentUser.role !== 'patient'){
-            const del = document.createElement('button'); del.className='small ghost'; del.textContent='Delete';
-            del.onclick = ()=>{ if(confirm('Delete appointment?')){ const appts=load(LS_APPTS)||[]; save(LS_APPTS, appts.filter(x=>x.id!==a.id)); renderAppts(); }};
-            const edit = document.createElement('button'); edit.className='small ghost'; edit.textContent='Edit';
-            edit.onclick = ()=>{ 
-              // populate create form for editing (delete old, user can save)
-              if($('#patientName')) $('#patientName').value=a.patientName;
-              if($('#apDate')) $('#apDate').value=a.date;
-              if($('#apTime')) $('#apTime').value=a.time;
-              if($('#notes')) $('#notes').value=a.notes||'';
-              if($('#clinicSel')){ $('#clinicSel').value=a.clinicId; $('#clinicSel').dispatchEvent(new Event('change')); }
-              if($('#doctorSel')) $('#doctorSel').value=a.doctorId;
-              const appts = load(LS_APPTS)||[]; save(LS_APPTS, appts.filter(x=>x.id!==a.id)); renderAppts();
-            };
-            act.appendChild(edit); act.appendChild(del);
-          }
-          li.appendChild(leftBlock);
-          li.appendChild(act);
-          apList.appendChild(li);
-        });
-      }
-      renderAppts();
-
-      // search
-      if($('#searchBtn')){
-        $('#searchBtn').onclick = ()=>{
-          const q = $('#searchBox').value.trim().toLowerCase(); 
-          if(!q) return renderAppts();
-          const appts = load(LS_APPTS)||[]; const clinics = load(LS_CLINICS)||[]; const docs = load(LS_DOCTORS)||[];
-          const filtered = appts.filter(a=>{
-            const clinic = clinics.find(c=>c.id===a.clinicId); const doc = docs.find(d=>d.id===a.doctorId);
-            return [a.patientName, a.date, a.time, a.notes, doc?doc.name:'', clinic?clinic.name:''].join(' ').toLowerCase().includes(q);
-          });
-          renderAppts(filtered);
-        };
-        $('#resetBtn').onclick = ()=>{ $('#searchBox').value=''; renderAppts(); };
-      }
-
-      // management buttons
-      $('#manageClinics').onclick = ()=>showClinicsPanel();
-      $('#manageDoctors').onclick = ()=>showDoctorsPanel();
-      $('#showSummary').onclick = ()=>showSummary();
-
-      // export/import
-      $('#exportJSON').onclick = ()=>{
-        const data = {users:load(LS_USERS), clinics:load(LS_CLINICS), doctors:load(LS_DOCTORS), appts:load(LS_APPTS)};
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='clinic-data.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      };
-      $('#importBtn').onclick = ()=>{ $('#importFile').click(); };
-      $('#importFile').onchange = (e)=>{
-        const f = e.target.files[0]; if(!f) return; const reader = new FileReader();
-        reader.onload = ev=>{ try{ const data = JSON.parse(ev.target.result); if(data.users) save(LS_USERS,data.users); if(data.clinics) save(LS_CLINICS,data.clinics); if(data.doctors) save(LS_DOCTORS,data.doctors); if(data.appts) save(LS_APPTS,data.appts); alert('Imported'); render(); }catch(err){ alert('Invalid file'); } };
-        reader.readAsText(f);
-      };
-
-      $('#showAll').onclick = ()=> renderAppts();
-      $('#purgeOld').onclick = ()=>{
-        if(!confirm('Remove appointments older than today?')) return;
-        const appts = load(LS_APPTS)||[]; const today = new Date().toISOString().slice(0,10);
-        const kept = appts.filter(a=> a.date >= today ); save(LS_APPTS, kept); renderAppts();
-      };
-
-      // panels
-      function showClinicsPanel(){
-        const mp = $('#managePanel');
-        const clinics = load(LS_CLINICS)||[];
-        mp.innerHTML = `<h4>Clinics</h4><div style="margin-bottom:8px"><input id="newClinicName" placeholder="Clinic name"/></div><div style="margin-bottom:8px"><input id="newClinicAddr" placeholder="Address"/></div><div class="row"><button id="addClinicBtn">Add Clinic</button></div><div style="height:8px"></div><ul id="clinicList"></ul>`;
-        const list = $('#clinicList'); list.innerHTML=''; clinics.forEach(c=>{ const li=document.createElement('li'); li.className='item'; li.innerHTML=`<div><div class="meta">${c.name}</div><div class="tiny">${c.address||''}</div></div>`; const act=document.createElement('div'); act.className='actions'; const del=document.createElement('button'); del.className='small ghost'; del.textContent='Delete'; del.onclick=()=>{ if(confirm('Delete clinic? This will unassign related doctors and appointments.')){ const clinics=load(LS_CLINICS)||[]; save(LS_CLINICS, clinics.filter(x=>x.id!==c.id)); // remove clinic from doctors and appts
-              let docs = load(LS_DOCTORS)||[]; docs = docs.map(d=> d.clinicId===c.id ? {...d, clinicId:null} : d); save(LS_DOCTORS, docs);
-              let appts = load(LS_APPTS)||[]; appts = appts.filter(a=>a.clinicId!==c.id); save(LS_APPTS, appts); render(); }}; const edit=document.createElement('button'); edit.className='small ghost'; edit.textContent='Edit'; edit.onclick=()=>{ const name = prompt('Clinic name', c.name); if(name===null) return; const addr = prompt('Address', c.address||''); const clinics = load(LS_CLINICS)||[]; save(LS_CLINICS, clinics.map(x=> x.id===c.id? {...x, name, address:addr} : x)); render(); };
-            act.appendChild(edit); act.appendChild(del); li.appendChild(act); list.appendChild(li); });
-        $('#addClinicBtn').onclick = ()=>{
-          const name = $('#newClinicName').value.trim(); const addr = $('#newClinicAddr').value.trim(); if(!name){alert('Enter name');return;} const clinics = load(LS_CLINICS)||[]; clinics.push({id:uid('clinic'), name, address:addr}); save(LS_CLINICS, clinics); $('#newClinicName').value=''; $('#newClinicAddr').value=''; showClinicsPanel(); render(); }
-      }
-
-      function showDoctorsPanel(){
-        const mp = $('#managePanel');
-        const clinics = load(LS_CLINICS)||[]; const doctors = load(LS_DOCTORS)||[];
-        mp.innerHTML = `<h4>Doctors</h4>
-          <div style="margin-bottom:8px"><input id="newDocName" placeholder="Doctor name"/></div>
-          <div style="margin-bottom:8px"><label>Assign Clinic</label><select id="assignClinic"></select></div>
-          <div class="row"><button id="addDocBtn">Add Doctor</button></div>
-          <div style="height:8px"></div><ul id="docList"></ul>`;
-        const sel = $('#assignClinic'); sel.innerHTML=''; clinics.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; sel.appendChild(o); });
-        const list = $('#docList'); list.innerHTML=''; doctors.forEach(d=>{ const clinic = clinics.find(c=>c.id===d.clinicId); const li=document.createElement('li'); li.className='item'; li.innerHTML = `<div><div class="meta">${d.name}</div><div class="tiny">${clinic?clinic.name:'Unassigned'}</div></div>`;
-          const act=document.createElement('div'); act.className='actions'; const del=document.createElement('button'); del.className='small ghost'; del.textContent='Delete'; del.onclick=()=>{ if(confirm('Delete doctor?')){ const doctors=load(LS_DOCTORS)||[]; save(LS_DOCTORS, doctors.filter(x=>x.id!==d.id)); let appts = load(LS_APPTS)||[]; appts = appts.filter(a=>a.doctorId!==d.id); save(LS_APPTS, appts); render(); }};
-          const edit=document.createElement('button'); edit.className='small ghost'; edit.textContent='Edit'; edit.onclick=()=>{ const name = prompt('Doctor name', d.name); if(name===null) return; const clinics = load(LS_CLINICS)||[]; const opt = prompt('Assign clinic id (leave blank to unassign)', d.clinicId||''); const doctors = load(LS_DOCTORS)||[]; save(LS_DOCTORS, doctors.map(x=> x.id===d.id? {...x, name, clinicId: opt||null} : x)); render(); };
-          act.appendChild(edit); act.appendChild(del); li.appendChild(act); list.appendChild(li);
-        });
-        $('#addDocBtn').onclick = ()=>{ const name = $('#newDocName').value.trim(); const clinicId = $('#assignClinic').value||null; if(!name){alert('Enter name');return;} const docs = load(LS_DOCTORS)||[]; docs.push({id:uid('dr'), name, clinicId}); save(LS_DOCTORS, docs); $('#newDocName').value=''; showDoctorsPanel(); render(); };
-      }
-
-      function showSummary(){
-        const mp = $('#managePanel'); const clinics = load(LS_CLINICS)||[]; const docs = load(LS_DOCTORS)||[]; const appts = load(LS_APPTS)||[];
-        let byClinic = clinics.map(c=>({clinic:c.name, count: appts.filter(a=>a.clinicId===c.id).length}));
-        mp.innerHTML = `<h4>Summary</h4><div><strong>Total clinics:</strong> ${clinics.length}</div><div><strong>Total doctors:</strong> ${docs.length}</div><div><strong>Total appointments:</strong> ${appts.length}</div><div style="height:8px"></div><div><strong>Appointments by clinic</strong><ul>${byClinic.map(b=>`<li>${b.clinic}: ${b.count}</li>`).join('')}</ul></div>`;
-      }
-    }
-
-    // login/register UI
-    function showLogin(){
-      const main = $('#main'); main.innerHTML = `<div class="card"><h3>Login / Register</h3>
-        <div class="row"><div class="col"><label>Role</label><select id="roleSel"><option value="admin">Admin</option><option value="clinic-admin">Clinic Admin</option><option value="doctor">Doctor</option><option value="patient">Patient</option></select></div>
-        <div class="col"><label>Username</label><input id="username"/></div>
-        <div class="col"><label>Password</label><input id="password" type="password"/></div></div>
-        <div class="row"><button id="loginBtn">Login</button><button id="regBtn" class="ghost small">Register</button></div>
-        <div style="margin-top:8px" class="muted">Tip: use seeded users listed in the footer to try features.</div>
-      </div>`;
-
-      $('#loginBtn').onclick = ()=>{
-        const users = load(LS_USERS) || [];
-        const u = $('#username').value.trim(); const p = $('#password').value; const role = $('#roleSel').value;
-        const found = users.find(x=>x.username===u && x.password===p && x.role===role);
-        if(found){ currentUser = found; render(); } else { alert('Invalid credentials'); }
-      };
-
-      $('#regBtn').onclick = ()=>{
-        const u = $('#username').value.trim(); const p = $('#password').value; const role = $('#roleSel').value;
-        if(!u||!p){ alert('Enter username & password'); return; }
-        const users = load(LS_USERS) || [];
-        if(users.some(x=>x.username===u)){ alert('Username taken'); return; }
-        const newUser = {username:u, password:p, role};
-        if(role==='clinic-admin'){ // allow assigning clinic later via admin
-        }
-        users.push(newUser); save(LS_USERS, users); alert('Registered — please login');
-      };
-    }
-
-    // init
-    renderNav(); showLogin();
-  })();
-  </script>
+function deleteUser(id){users=users.filter(u=>u.id!==id);save();renderPatients();renderDoctorPatients();}
+searchBox.addEventListener("input",e=>{let q=e.target.value.toLowerCase();document.querySelectorAll("#patientsContainer .card").forEach(c=>{c.style.display=c.textContent.toLowerCase().includes(q)?"flex":"none";});});
+showPage();
+</script>
 </body>
 </html>
