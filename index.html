@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Clinic Appointment System</title>
 <style>
 body{font-family:'Segoe UI',sans-serif;margin:0;padding:0;background:#fff;color:#000;min-height:100vh;display:flex;flex-direction:column;}
@@ -17,7 +17,7 @@ button.outline{border:1px solid #2563eb;background:#fff;color:#2563eb;font-weigh
 button.outline:hover{background:#2563eb;color:#fff;}
 .admin-dashboard{display:flex;width:100%;gap:15px;align-items:flex-start;flex-wrap:wrap;}
 .forms{flex:1;min-width:280px;max-width:320px;display:flex;flex-direction:column;max-height:600px;overflow-y:auto;}
-.cards-container{flex:2;display:flex;flex-direction:column;align-items:center;max-height:600px;overflow-y:auto;width:100%;}
+.cards-container{flex:2;display:flex;flex-direction:column;align-items:center;max-height:600px;overflow-y:auto;width:100%; }
 .cards{display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-start;}
 .card{background:#fff;padding:10px;border-radius:10px;border:1px solid #ddd;min-width:220px;max-width:260px;text-align:left;font-size:13px;flex:1;}
 .card h3{margin:5px 0;font-size:15px;color:#000;}
@@ -35,7 +35,6 @@ Clinic Appointment System
 </header>
 
 <div class="container">
-<!-- Login Only -->
 <div id="authPage">
 <form id="loginForm">
 <h2>Login</h2>
@@ -50,7 +49,6 @@ Clinic Appointment System
 </form>
 </div>
 
-<!-- Admin Dashboard -->
 <div id="adminPage" style="display:none;width:100%;">
 <div class="admin-dashboard">
 <div class="forms">
@@ -80,14 +78,14 @@ Clinic Appointment System
 <input type="date" id="patientDate" required>
 <input type="time" id="patientTime" required>
 <select id="patientDay" required>
-  <option value="">Select Day</option>
-  <option>Monday</option>
-  <option>Tuesday</option>
-  <option>Wednesday</option>
-  <option>Thursday</option>
-  <option>Friday</option>
-  <option>Saturday</option>
-  <option>Sunday</option>
+<option value="">Select Day</option>
+<option>Monday</option>
+<option>Tuesday</option>
+<option>Wednesday</option>
+<option>Thursday</option>
+<option>Friday</option>
+<option>Saturday</option>
+<option>Sunday</option>
 </select>
 <input type="text" id="patientAddress" placeholder="Address" required>
 <select id="patientDoctor"></select>
@@ -101,140 +99,221 @@ Clinic Appointment System
 </div>
 </div>
 
-<!-- Doctor Dashboard -->
 <div id="doctorPage" style="display:none;">
 <h2>Doctor Dashboard</h2>
 <div class="cards" id="doctorPatients"></div>
 </div>
 
-<!-- Patient Dashboard -->
 <div id="patientPage" style="display:none;">
 <h2>Patient Dashboard</h2>
 <div class="cards" id="myCard"></div>
 </div>
 </div>
 
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js"></script>
-
 <script>
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAIje3aPJK5BeZ9u0M-PY3rrZHPBZCsp7I",
   authDomain: "patient-app-9d81f.firebaseapp.com",
   databaseURL: "https://patient-app-9d81f-default-rtdb.firebaseio.com",
   projectId: "patient-app-9d81f",
-  storageBucket: "patient-app-9d81f.firebasestorage.app",
+  storageBucket: "patient-app-9d81f.appspot.com",
   messagingSenderId: "86486627512",
-  appId: "1:86486627512:web:595270284159741947f04d",
-  measurementId: "G-4ER8TMMJEV"
+  appId: "1:86486627512:web:595270284159741947f04d"
 };
-const app = firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 const db = firebase.database();
 
-let users=JSON.parse(localStorage.getItem("users")||"[]");
-let clinics=JSON.parse(localStorage.getItem("clinics")||"[]");
-let currentUser=JSON.parse(localStorage.getItem("currentUser")||"null");
+let currentUser = null;
+let users = [];
+let clinics = [];
+let doctors = [];
+let patients = [];
 
-// Default admin
-if(!users.some(u=>u.role==="admin")){
-  users.push({id:1,name:"Admin",email:"admin@wec.com",password:"admin123",role:"admin"});
-  localStorage.setItem("users",JSON.stringify(users));
+// Elements
+const loginForm = document.getElementById("loginForm");
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
+const loginRole = document.getElementById("loginRole");
+const logoutBtn = document.getElementById("logoutBtn");
+const authPage = document.getElementById("authPage");
+const adminPage = document.getElementById("adminPage");
+const doctorPage = document.getElementById("doctorPage");
+const patientPage = document.getElementById("patientPage");
+
+const clinicForm = document.getElementById("clinicForm");
+const doctorForm = document.getElementById("doctorForm");
+const patientForm = document.getElementById("patientForm");
+const doctorClinic = document.getElementById("doctorClinic");
+const patientDoctor = document.getElementById("patientDoctor");
+const patientsContainer = document.getElementById("patientsContainer");
+const doctorPatients = document.getElementById("doctorPatients");
+const myCard = document.getElementById("myCard");
+const searchBox = document.getElementById("searchBox");
+
+// Fetch Firebase data
+function fetchData(){
+  db.ref('users').once('value', snap=>{
+    users = [];
+    snap.forEach(child=>users.push({...child.val(), id: child.key}));
+  });
+  db.ref('clinics').once('value', snap=>{
+    clinics = [];
+    snap.forEach(c=>clinics.push({...c.val(), id: c.key}));
+    fillClinicOptions();
+  });
+  db.ref('doctors').once('value', snap=>{
+    doctors = [];
+    snap.forEach(d=>doctors.push({...d.val(), id: d.key}));
+    fillDoctorOptions();
+  });
+  db.ref('patients').once('value', snap=>{
+    patients = [];
+    snap.forEach(p=>patients.push({...p.val(), id: p.key}));
+    renderPatients();
+    renderDoctorPatients();
+    renderMyCard();
+  });
 }
+fetchData();
 
-function save(){
-  localStorage.setItem("users",JSON.stringify(users));
-  localStorage.setItem("clinics",JSON.stringify(clinics));
-  localStorage.setItem("currentUser",JSON.stringify(currentUser));
-  db.ref("users").set(users);
-  db.ref("clinics").set(clinics);
-  db.ref("currentUser").set(currentUser);
-}
-db.ref("users").on("value",snap=>{if(snap.val()) users=snap.val();});
-db.ref("clinics").on("value",snap=>{if(snap.val()) clinics=snap.val();});
-db.ref("currentUser").on("value",snap=>{currentUser=snap.val();showPage();});
-
-// login
-loginForm.addEventListener("submit",e=>{
-  e.preventDefault();
-  let u=users.find(x=>x.email===loginEmail.value && x.password===loginPassword.value && x.role===loginRole.value);
-  if(!u)return alert("Invalid credentials");
-  currentUser=u;save();showPage();
-});
-
-function logout(){currentUser=null;save();location.reload();}
 function showPage(){
-  document.getElementById("authPage").style.display=currentUser? "none":"flex";
-  document.getElementById("adminPage").style.display=(currentUser&&currentUser.role==="admin")? "flex":"none";
-  document.getElementById("doctorPage").style.display=(currentUser&&currentUser.role==="doctor")? "flex":"none";
-  document.getElementById("patientPage").style.display=(currentUser&&currentUser.role==="patient")? "flex":"none";
-  document.getElementById("logoutBtn").style.display=currentUser? "inline-block":"none";
-  fillDoctorOptions();fillClinicOptions();renderPatients();renderDoctorPatients();renderMyCard();
+  authPage.style.display = currentUser ? "none":"flex";
+  adminPage.style.display = currentUser && currentUser.role==='admin' ? "flex":"none";
+  doctorPage.style.display = currentUser && currentUser.role==='doctor' ? "flex":"none";
+  patientPage.style.display = currentUser && currentUser.role==='patient' ? "flex":"none";
+  logoutBtn.style.display = currentUser ? 'inline-block':'none';
 }
 
-// add clinic
-clinicForm.addEventListener("submit",e=>{
+// Login
+loginForm.addEventListener('submit', e=>{
   e.preventDefault();
-  clinics.push({id:Date.now(),name:clinicName.value,address:clinicAddress.value,phone:clinicPhone.value});
-  save();alert("Clinic Added");clinicForm.reset();fillClinicOptions();
-});
-function fillClinicOptions(){doctorClinic.innerHTML=clinics.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");}
+  const email = loginEmail.value;
+  const password = loginPassword.value;
 
-// add doctor
-doctorForm.addEventListener("submit",e=>{
+  firebase.auth().signInWithEmailAndPassword(email,password)
+    .then(res=>{
+      db.ref('users/'+res.user.uid).once('value').then(snap=>{
+        currentUser = snap.val();
+        currentUser.id = res.user.uid;
+        showPage();
+      });
+    })
+    .catch(err=>{
+      alert(err.message);
+    });
+});
+
+
+// Add Clinic
+clinicForm.addEventListener('submit', e=>{
   e.preventDefault();
-  let doc={id:Date.now(),name:doctorName.value,email:doctorEmail.value,password:doctorPassword.value,role:"doctor",clinicId:doctorClinic.value};
-  users.push(doc);save();alert("Doctor Added");doctorForm.reset();fillDoctorOptions();
+  const clinic={
+    name: clinicForm.clinicName.value,
+    address: clinicForm.clinicAddress.value,
+    phone: clinicForm.clinicPhone.value
+  };
+  const newRef = db.ref('clinics').push();
+  newRef.set(clinic).then(()=>{
+    alert('Clinic added');
+    fetchData();
+    clinicForm.reset();
+  });
 });
 
-// add patient
-patientForm.addEventListener("submit",e=>{
+// Add Doctor
+doctorForm.addEventListener('submit', e=>{
   e.preventDefault();
-  let pat={id:Date.now(),name:patientName.value,email:patientEmail.value,password:patientPassword.value,role:"patient",phone:patientPhone.value,age:patientAge.value,problem:patientProblem.value,date:patientDate.value,time:patientTime.value,day:patientDay.value,address:patientAddress.value,doctorId:patientDoctor.value};
-  users.push(pat);save();patientForm.reset();renderPatients();renderDoctorPatients();
+  const doctor={
+    name: doctorForm.doctorName.value,
+    email: doctorForm.doctorEmail.value,
+    password: doctorForm.doctorPassword.value,
+    clinicId: doctorClinic.value,
+    role:'doctor'
+  };
+  const newRef = db.ref('doctors').push();
+  newRef.set(doctor).then(()=>{
+    alert('Doctor added');
+    fetchData();
+    doctorForm.reset();
+  });
 });
-function fillDoctorOptions(){let docs=users.filter(u=>u.role==="doctor");patientDoctor.innerHTML=docs.map(d=>`<option value="${d.id}">${d.name}</option>`).join("");}
 
-// render patients (admin)
+// Add Patient
+patientForm.addEventListener('submit', e=>{
+  e.preventDefault();
+  const patient={
+    name: patientForm.patientName.value,
+    email: patientForm.patientEmail.value,
+    password: patientForm.patientPassword.value,
+    phone: patientForm.patientPhone.value,
+    age: patientForm.patientAge.value,
+    problem: patientForm.patientProblem.value,
+    date: patientForm.patientDate.value,
+    time: patientForm.patientTime.value,
+    day: patientForm.patientDay.value,
+    address: patientForm.patientAddress.value,
+    doctorId: patientForm.patientDoctor.value,
+    role:'patient'
+  };
+  const newRef = db.ref('patients').push();
+  newRef.set(patient).then(()=>{
+    alert('Patient added');
+    fetchData();
+    patientForm.reset();
+  });
+});
+
+// Dropdowns
+function fillClinicOptions(){
+  doctorClinic.innerHTML = clinics.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+}
+function fillDoctorOptions(){
+  patientDoctor.innerHTML = doctors.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+}
+
+// Render Patients
 function renderPatients(){
-  patientsContainer.innerHTML="";
-  let pats=users.filter(u=>u.role==="patient");
-  pats.forEach(p=>{
-    let card=document.createElement("div");card.className="card";
-    card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email}</p><p><b>Phone:</b> ${p.phone}</p><p><b>Age:</b> ${p.age}</p><p><b>Problem:</b> ${p.problem}</p><p><b>Date:</b> ${p.date} ${p.time} (${p.day})</p><p><b>Address:</b> ${p.address}</p>
-    <div><button class="outline" onclick="alert('SMS to ${p.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button><button class="outline" onclick="deleteUser(${p.id})">Delete</button></div>`;
+  patientsContainer.innerHTML='';
+  patients.forEach(p=>{
+    let card=document.createElement('div');
+    card.className='card';
+    card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b>${p.email}</p><p><b>Phone:</b>${p.phone}</p><p><b>Age:</b>${p.age}</p><p><b>Problem:</b>${p.problem}</p><p><b>Date:</b>${p.date} ${p.time} (${p.day})</p><p><b>Address:</b>${p.address}</p><div><button class='outline' onclick="alert('SMS to ${p.phone}')">SMS</button><button class='outline' onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button></div>`;
     patientsContainer.appendChild(card);
   });
 }
-
-// doctor dashboard
 function renderDoctorPatients(){
-  doctorPatients.innerHTML="";
-  if(currentUser && currentUser.role==="doctor"){
-    let pats=users.filter(p=>p.role==="patient" && p.doctorId==currentUser.id);
+  doctorPatients.innerHTML='';
+  if(currentUser && currentUser.role==='doctor'){
+    let pats = patients.filter(p=>p.doctorId==currentUser.id);
     pats.forEach(p=>{
-      let card=document.createElement("div");card.className="card";
-      card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b> ${p.email}</p><p><b>Phone:</b> ${p.phone}</p><p><b>Age:</b> ${p.age}</p><p><b>Problem:</b> ${p.problem}</p><p><b>Date:</b> ${p.date} ${p.time} (${p.day})</p><p><b>Address:</b> ${p.address}</p>
-      <div><button class="outline" onclick="alert('SMS to ${p.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button></div>`;
+      let card=document.createElement('div');
+      card.className='card';
+      card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b>${p.email}</p><p><b>Phone:</b>${p.phone}</p><p><b>Age:</b>${p.age}</p><p><b>Problem:</b>${p.problem}</p><p><b>Date:</b>${p.date} ${p.time} (${p.day})</p><p><b>Address:</b>${p.address}</p><div><button class='outline' onclick="alert('SMS to ${p.phone}')">SMS</button><button class='outline' onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button></div>`;
       doctorPatients.appendChild(card);
     });
   }
 }
-
-// patient dashboard
 function renderMyCard(){
-  myCard.innerHTML="";
-  if(currentUser&&currentUser.role==="patient"){
-    let card=document.createElement("div");card.className="card";
-    card.innerHTML=`<h3>${currentUser.name}</h3><p><b>Email:</b> ${currentUser.email}</p><p><b>Phone:</b> ${currentUser.phone}</p><p><b>Age:</b> ${currentUser.age}</p><p><b>Problem:</b> ${currentUser.problem}</p><p><b>Date:</b> ${currentUser.date} ${currentUser.time} (${currentUser.day})</p><p><b>Address:</b> ${currentUser.address}</p>
-    <div><button class="outline" onclick="alert('SMS to ${currentUser.phone}')">SMS</button><button class="outline" onclick="window.open('https://wa.me/${currentUser.phone}','_blank')">WhatsApp</button></div>`;
+  myCard.innerHTML='';
+  if(currentUser && currentUser.role==='patient'){
+    let p = currentUser;
+    let card=document.createElement('div');
+    card.className='card';
+    card.innerHTML=`<h3>${p.name}</h3><p><b>Email:</b>${p.email}</p><p><b>Phone:</b>${p.phone}</p><p><b>Age:</b>${p.age}</p><p><b>Problem:</b>${p.problem}</p><p><b>Date:</b>${p.date} ${p.time} (${p.day})</p><p><b>Address:</b>${p.address}</p><div><button class='outline' onclick="alert('SMS to ${p.phone}')">SMS</button><button class='outline' onclick="window.open('https://wa.me/${p.phone}','_blank')">WhatsApp</button></div>`;
     myCard.appendChild(card);
   }
 }
 
-function deleteUser(id){users=users.filter(u=>u.id!==id);save();renderPatients();renderDoctorPatients();}
-searchBox.addEventListener("input",e=>{let q=e.target.value.toLowerCase();document.querySelectorAll("#patientsContainer .card").forEach(c=>{c.style.display=c.textContent.toLowerCase().includes(q)?"flex":"none";});});
+// Search
+searchBox.addEventListener('input', e=>{
+  let q = e.target.value.toLowerCase();
+  document.querySelectorAll('#patientsContainer .card').forEach(c=>c.style.display=c.textContent.toLowerCase().includes(q)?'flex':'none');
+});
+
 showPage();
 </script>
 </body>
